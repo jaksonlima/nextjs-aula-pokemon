@@ -144,7 +144,11 @@
 import { GetServerSideProps } from "next/types";
 
 export default function Index() {
-  return <div>Carregando...</div>;
+  return (
+    <>
+      <div>Carregando...</div>
+    </>
+  );
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {

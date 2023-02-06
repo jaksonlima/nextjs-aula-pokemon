@@ -1,36 +1,34 @@
 const URL = process.env.NEXT_PUBLIC_URL_API;
 
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import Image from "next/image";
+
 import { Spinner } from "@/components/Spinner";
 import { findColorOrRandom } from "@/styles/colors";
 import { Pokemon } from "@/types/Pokemon";
-import Image from "next/image";
-import { useRouter } from "next/router";
-import { PropsWithChildren, useEffect, useState } from "react";
-import css from "@/styles/Pokemon.module.css";
 
 export default function SpecificPokemon() {
   const [pokemon, setPokemon] = useState<Pokemon>();
-
   const { query } = useRouter();
 
   useEffect(() => {
-    const id = query.id;
-    if (query.id) {
+    const { id, search } = query;
+    if (id || search) {
       (async () => {
-        const response = await fetch(`${URL}/pokemon/${id}`);
+        const response = await fetch(`${URL}/pokemon/${search ? search : id}`);
         const pokemons = (await response.json()) as Pokemon;
 
         setPokemon(pokemons);
-
-        console.log({ pokemons });
       })();
     }
   }, [query]);
 
   const typeNames = pokemon?.types.map(({ type }) => type.name);
-  const linearGradient = `linear-gradient(to right, #403a3e, ${findColorOrRandom(
-    typeNames?.[0] || ""
-  )})`;
+
+  const linearGradient = `linear-gradient(to right, #403a3e, ${
+    typeNames ? `${findColorOrRandom(typeNames?.[0])}` : "#f4f4f4"
+  })`;
 
   return (
     <main
@@ -71,7 +69,13 @@ export default function SpecificPokemon() {
           <p>#{pokemon?.id}</p>
           <h5>{pokemon?.name}</h5>
         </div>
-        <Image width={425} height={637} src="/pokedex.png" alt="pokedex" />;
+        <Image
+          width={425}
+          height={637}
+          src="/pokedex.png"
+          alt="pokedex"
+          priority
+        />
         <div
           style={{
             position: "absolute",
@@ -80,33 +84,38 @@ export default function SpecificPokemon() {
             gap: "10px",
             bottom: "41px",
             left: "32px",
-            background: linearGradient,
             padding: "9px",
             borderRadius: "6px",
             maxWidth: "315px",
-            opacity: 0.7,
+            opacity: 0.8,
           }}
         >
-          {pokemon?.stats.map(({ stat, base_stat }) => (
-            <div style={{ display: "inline-flex", gap: "10px" }}>
-              <p
-                style={{
-                  color: "white",
-                  fontSize: "17px",
-                  fontWeight: "bold",
-                  textTransform: "capitalize",
-                }}
-              >
-                {stat.name}
-              </p>
-              <progress
-                id="stats"
-                value={base_stat}
-                max="100"
-                // style={{ background: linearGradient }}
-              />
-            </div>
-          ))}
+          {pokemon ? (
+            <>
+              {pokemon?.stats.map(({ stat, base_stat }) => (
+                <div
+                  key={stat.name}
+                  style={{ display: "inline-flex", gap: "10px" }}
+                >
+                  <p
+                    style={{
+                      color: "white",
+                      fontSize: "17px",
+                      fontWeight: "bold",
+                      textTransform: "capitalize",
+                    }}
+                  >
+                    {stat.name}
+                  </p>
+                  <progress id="stats" value={base_stat} max="100" />
+                </div>
+              ))}
+            </>
+          ) : (
+            <>
+              <Spinner />
+            </>
+          )}
         </div>
       </div>
     </main>
