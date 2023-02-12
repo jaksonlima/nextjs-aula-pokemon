@@ -1,12 +1,11 @@
 import { GetServerSidePropsContext } from "next";
 import { useRouter } from "next/router";
-import { UIEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 
 import { findColorOrRandom } from "@/styles/colors";
-import { hexa } from "@/utils/randomColor";
 import css from "@/styles/Pokemon.module.css";
-import Link from "next/link";
-import Image from "next/image";
 
 export default function Pokemon({ data }: any) {
   const { query, push, pathname } = useRouter();
@@ -24,6 +23,14 @@ export default function Pokemon({ data }: any) {
     if (pokemons.length !== offsetBuild) {
       handlePaginationBuild();
     }
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("scroll", handleScroll);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, []);
 
   const handlePaginationBuild = () => {
@@ -44,12 +51,10 @@ export default function Pokemon({ data }: any) {
     });
   };
 
-  const handleScroll = (
-    event: UIEvent<HTMLUListElement, globalThis.UIEvent>
-  ) => {
-    const { offsetHeight, scrollTop, scrollHeight } = event.currentTarget;
-
-    const validate = offsetHeight + scrollTop >= scrollHeight;
+  const handleScroll = () => {
+    const validate =
+      Math.ceil(window.innerHeight + window.scrollY) >=
+      document.documentElement.scrollHeight;
 
     if (validate) {
       handlePaginationPrevius();
