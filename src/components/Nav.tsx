@@ -16,10 +16,14 @@ export default function Nav({ children }: PropsWithChildren) {
   function onChangeReplace(event: React.ChangeEvent<HTMLInputElement>) {
     const valueSearch = event.target.value;
 
-    replace({
-      pathname: asPath?.split("?")?.[0],
-      ...(valueSearch && { search: `search=${event.target.value}` }),
-    });
+    if (valueSearch) {
+      query.search = valueSearch;
+
+      replace({
+        pathname: asPath?.split("?")?.[0],
+        query: query,
+      });
+    }
   }
 
   const onClickPush = () => {

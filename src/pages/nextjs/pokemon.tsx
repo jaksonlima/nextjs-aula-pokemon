@@ -7,22 +7,52 @@ import Link from "next/link";
 import { findColorOrRandom } from "@/styles/colors";
 import css from "@/styles/Pokemon.module.css";
 
+const limit = 20;
+const offset = 0;
+
 export default function Pokemon({ data }: any) {
-  const { query, push, pathname } = useRouter();
+  const { query, pathname, replace } = useRouter();
   const [pokemons, setPokemon] = useState<any[]>([]);
 
-  const offsetBuild = Number(query?.offset);
+  console.log({ data });
 
   useEffect(() => {
-    if (pokemons.length === offsetBuild) {
-      setPokemon(pokemons.concat(data));
+    if (query.offset && !query.search) {
+      setPokemon((oldPokemons) => {
+        const filter = data.filter(
+          (pokemoSpecific: any) =>
+            !oldPokemons.some(
+              (oldPokemon) => pokemoSpecific.id === oldPokemon?.id
+            )
+        );
+
+        return oldPokemons.concat(filter);
+      });
+    }
+
+    if (query.search) {
+      (async () => {
+        const pokemonExistsIndex = pokemons.findIndex(
+          (pokemon: any) =>
+            `${pokemon.id}` === `${query.search}` ||
+            pokemon.name === query.search
+        );
+
+        if (pokemonExistsIndex >= 0) {
+          const pokemonSelectedIndex = pokemons[pokemonExistsIndex];
+          const pokemonSelectedIndexZero = pokemons[0];
+
+          pokemons[0] = pokemonSelectedIndex;
+          pokemons[pokemonExistsIndex] = pokemonSelectedIndexZero;
+
+          setPokemon([...pokemons]);
+        }
+      })();
     }
   }, [data]);
 
   useEffect(() => {
-    if (pokemons.length !== offsetBuild) {
-      handlePaginationBuild();
-    }
+    handlePaginationBuild();
   }, []);
 
   useEffect(() => {
@@ -34,20 +64,21 @@ export default function Pokemon({ data }: any) {
   }, []);
 
   const handlePaginationBuild = () => {
-    push({
+    replace({
       pathname,
       query: {
-        offset: 0,
+        offset,
       },
     });
   };
 
   const handlePaginationPrevius = () => {
-    query.offset = `${offsetBuild + 5}`;
+    query.search = "";
+    query.offset = `${parseFloat((query.offset as string) ?? offset) + limit}`;
 
-    push({
+    replace({
       pathname,
-      query: query,
+      query,
     });
   };
 
@@ -84,6 +115,7 @@ export default function Pokemon({ data }: any) {
             >
               <Link href={`/nextjs/pokemon/${pokemon.id}`}>
                 <Image
+                  priority
                   className={css.slideFwdTop}
                   width={250}
                   height={250}
@@ -120,11 +152,23 @@ export default function Pokemon({ data }: any) {
 }
 
 export async function getServerSideProps({ query }: GetServerSidePropsContext) {
+  const search = query?.search;
+
+  if (search) {
+    const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${search}`);
+
+    const { id, name, sprites, types } = await response.json();
+
+    return {
+      props: { data: [{ id, name, sprites, types }] },
+    };
+  }
+
   const offset = Number(query?.offset);
 
   const responsePokemonAll = async () => {
     const response = await fetch(
-      `https://pokeapi.co/api/v2/pokemon?limit=40&offset=${offset}`
+      `https://pokeapi.co/api/v2/pokemon?limit=${limit}&offset=${offset}`
     );
 
     return await response.json();
